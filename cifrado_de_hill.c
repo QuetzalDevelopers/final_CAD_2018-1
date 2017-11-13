@@ -4,15 +4,18 @@
 
 void lecturaTeclado(int n, int *mat); 
 void lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam);
+void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int *tamano_palabra_codificada, int n);
 
 int main(int argc, char const *argv[])
 {
 	char *cad;
 	int tam,*mat,n;
+	int *cad_cod, n_cad_cod;
 	FILE* fichero; 
 
 	lecturaTeclado(n,mat);	
 	lecturaDeArchivoTXT(fichero, cad, tam);
+	convierte_cadena(cad, tam, cad_cod, &n_cad_cod, n);
 
 	return 0;
 
@@ -49,4 +52,30 @@ void lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam){
 	fclose(fichero);
 }
 
+void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int *tamano_palabra_codificada, int n){
+	char alfabeto[ ] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
+	int tamano_alfabeto, i, j;
 
+	tamano_alfabeto = strlen(alfabeto) + 1;
+
+	if(tamano_palabra % n == 0)
+		*tamano_palabra_codificada = tamano_palabra;
+	else
+		*tamano_palabra_codificada = tamano_palabra + n;
+
+	palabra_codificada = (int *) malloc(*tamano_palabra_codificada * sizeof(int));
+
+	for(i = 0; i < tamano_palabra; i++){
+		if(palabra[i] == 'Ñ')
+			palabra[i] = 'N';
+		for(j = 0; j < tamano_alfabeto; j++)
+			if(palabra[i] == alfabeto[j]){
+				palabra_codificada[i] = j;
+				break;
+			}
+	}
+
+	if(tamano_palabra != *tamano_palabra_codificada)
+		for(i = tamano_palabra; i < *tamano_palabra_codificada; i++)
+			palabra_codificada[i] = 'X';
+}
