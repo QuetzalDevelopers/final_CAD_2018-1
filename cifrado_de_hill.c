@@ -9,6 +9,7 @@ void lecturaDeArchivoTXT(FILE * fichero, char * cad, int n);
 int lecturaTeclado(int n, int *mat); 
 void lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam);
 void convierte_cadena(char *palabra, int *palabra_codificada, int n);
+int *multiplica_matriz(int *m, int n, int *w);
 //>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
 
 int main(int argc, char const *argv[])
@@ -16,6 +17,7 @@ int main(int argc, char const *argv[])
 	char *cad;
 	int tam,*mat,n;
 	int *cad_cod, n_cad_cod;
+	int *arreglo_cifrado;
 	FILE* fichero; 
 
 //<<<<<<< HEAD
@@ -25,6 +27,7 @@ int main(int argc, char const *argv[])
 	lecturaTeclado(n,mat);	
 	lecturaDeArchivoTXT(fichero, cad, tam);
 	convierte_cadena(cad, cad_cod, n);
+	arreglo_cifrado = multiplica_matriz(mat, n, cad_cod);
 //>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
 
 	return 0;
@@ -92,9 +95,6 @@ void convierte_cadena(char *palabra, int *palabra_codificada, int n){
 	char alfabeto[ ] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
 	int tamano_alfabeto, tamano_palabra, i, j;
 
-//<<<<<<< HEAD
-
-//=======
 	tamano_alfabeto = strlen(alfabeto) + 1;
 	tamano_palabra = sizeof(palabra) / sizeof(char);
 
@@ -110,4 +110,55 @@ void convierte_cadena(char *palabra, int *palabra_codificada, int n){
 			}
 	}
 }
-//>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
+
+/* Entradas: m es la matriz, n es el tamaño de la matriz y w es la palabra codificada
+ * Salida: apuntador al arreglo de enteros cifrado
+ */
+int *multiplica_matriz(int *m, int n, int *w){
+	int m_aux[n][n];
+	int w_aux[n];
+	int r_aux[n];
+	int *r;
+	int i, j, k;
+	int w_size;
+	int start, end, count;
+
+	k = 0;
+	w_size = sizeof(w)/sizeof(int);
+	r = (int *) malloc(w_size * sizeof(int));
+
+	//copiando lo que tiene la memoria dinámica en una matriz estática para evitar problemas al usar mpi
+	for(i = 0; i < n; i++)
+		for(j = 0; j < n; j++){
+			m_aux[i][j] = m[k];
+			k++;
+		}
+
+	//iniciando el proceso de la multiplicacion de la matriz
+	for(i = 0; i < w_size / n; i++){
+		start = i * n;
+		end = start + n;
+		count = 0;
+
+		//Copiando los grupos de n en el arreglo auxiliar
+		for(j = start; j < end; j++){
+			w_aux[count] = w[j];
+			count++;
+		}
+
+		//limpiando el arreglo auxiliar del resultado;
+		for(j = 0; j < n; j++)
+			r_aux[j] = 0;
+
+		//multiplicando la matriz con el grupo de la palabra
+		for(j = 0; j < n; j++)
+			for(k = 0; k < n; k++)
+				r_aux[j] += m_aux[j][k] * w_aux[k];
+
+		//se agrega al arreglo del resultado la parte de la palabra cifrada
+		for(j = start; j < end; j++)
+			r[j] = r_aux[j] % 53;
+	}
+
+	return r;
+}
