@@ -1,15 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#define ALFABETO "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+#define TAMANO_ALFABETO 53
 
 //<<<<<<< HEAD
 int lecturaTeclado(int n, int *mat); 
-void lecturaDeArchivoTXT(FILE * fichero, char * cad, int n);
+int lecturaDeArchivoTXT(FILE * fichero, char * cad, int n);
 //=======
-int lecturaTeclado(int n, int *mat); 
-void lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam);
-void convierte_cadena(char *palabra, int *palabra_codificada, int n);
-int *multiplica_matriz(int *m, int n, int *w);
+//int lecturaTeclado(int n, int *mat); 
+//int lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam);
+void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n);
+void multiplica_matriz(int *m, int n, int *w, int w_size, int *r);
+void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
 //>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
 
 int main(int argc, char const *argv[])
@@ -17,18 +20,25 @@ int main(int argc, char const *argv[])
 	char *cad;
 	int tam,*mat,n;
 	int *cad_cod, n_cad_cod;
-	int *arreglo_cifrado;
+	int *cad_cod_cif;
 	FILE* fichero; 
 
 //<<<<<<< HEAD
-	n=lecturaTeclado(n,mat);	
-	lecturaDeArchivoTXT(fichero, cad, n);
+	n=lecturaTeclado(n,mat);
+	tam=lecturaDeArchivoTXT(fichero, cad, n);
 //=======
-	lecturaTeclado(n,mat);	
-	lecturaDeArchivoTXT(fichero, cad, tam);
-	convierte_cadena(cad, cad_cod, n);
-	arreglo_cifrado = multiplica_matriz(mat, n, cad_cod);
+	//lecturaTeclado(n,mat);	
+	//lecturaDeArchivoTXT(fichero, cad, tam);
+	convierte_cadena(cad, tam, cad_cod, n);
+	printf("Voy a multiplicar la matriz\n");
+	multiplica_matriz(mat, n, cad_cod, tam, cad_cod_cif);
+	printf("Voy a recodificar\n");
+	convierte_codigo(cad_cod_cif, tam);
 //>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
+	free(cad);
+	free(mat);
+	free(cad_cod);
+	free(cad_cod_cif);
 
 	return 0;
 
@@ -49,7 +59,7 @@ int lecturaTeclado(int n, int *mat){
 	return n;
 }
 
-void lecturaDeArchivoTXT(FILE * fichero, char * cad, int n){
+int lecturaDeArchivoTXT(FILE * fichero, char * cad, int n){
 	int letra, contador,i,j,inicio,fin,modulo;
 	fichero = fopen("ejemplo.txt","r");
 	contador=0; 
@@ -88,23 +98,20 @@ void lecturaDeArchivoTXT(FILE * fichero, char * cad, int n){
 		inicio=inicio+n;
 		fin=inicio+n; 
 	}
-		
+	
+	return contador;
 }
 
-void convierte_cadena(char *palabra, int *palabra_codificada, int n){
-	char alfabeto[ ] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
-	int tamano_alfabeto, tamano_palabra, i, j;
-
-	tamano_alfabeto = strlen(alfabeto) + 1;
-	tamano_palabra = sizeof(palabra) / sizeof(char);
+void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n){
+	int i, j;
 
 	palabra_codificada = (int *) malloc(tamano_palabra * sizeof(int));
 
 	for(i = 0; i < tamano_palabra; i++){
 		if(palabra[i] == 'Ñ')
 			palabra[i] = 'N';
-		for(j = 0; j < tamano_alfabeto; j++)
-			if(palabra[i] == alfabeto[j]){
+		for(j = 0; j < TAMANO_ALFABETO; j++)
+			if(palabra[i] == ALFABETO[j]){
 				palabra_codificada[i] = j;
 				break;
 			}
@@ -114,20 +121,17 @@ void convierte_cadena(char *palabra, int *palabra_codificada, int n){
 /* Entradas: m es la matriz, n es el tamaño de la matriz y w es la palabra codificada
  * Salida: apuntador al arreglo de enteros cifrado
  */
-int *multiplica_matriz(int *m, int n, int *w){
+void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 	int m_aux[n][n];
 	int w_aux[n];
 	int r_aux[n];
-	int *r;
 	int i, j, k;
-	int w_size;
 	int start, end, count;
 
-	k = 0;
-	w_size = sizeof(w)/sizeof(int);
 	r = (int *) malloc(w_size * sizeof(int));
 
 	//copiando lo que tiene la memoria dinámica en una matriz estática para evitar problemas al usar mpi
+	k = 0;
 	for(i = 0; i < n; i++)
 		for(j = 0; j < n; j++){
 			m_aux[i][j] = m[k];
@@ -157,8 +161,31 @@ int *multiplica_matriz(int *m, int n, int *w){
 
 		//se agrega al arreglo del resultado la parte de la palabra cifrada
 		for(j = start; j < end; j++)
-			r[j] = r_aux[j] % 53;
+			r[j] = r_aux[j] % TAMANO_ALFABETO;
 	}
+}
 
-	return r;
+void convierte_codigo(int *codigo_cifrado, int tamano_codigo){
+	int i, j;
+	char *cadena_cifrada;
+	FILE *salida;
+
+	salida = fopen("cadena_cifrada.txt", "w");
+
+	if(salida == NULL){
+		printf("Error al abrir el archivo de salida\n");
+	}else{
+		cadena_cifrada = (char *) malloc(tamano_codigo * sizeof(char));
+
+		for(i = 0; i < tamano_codigo; i++)
+			for(j = 0; j < TAMANO_ALFABETO; j++)
+				if(codigo_cifrado[i] == ALFABETO[j]){
+					cadena_cifrada[i] = ALFABETO[j];
+					break;
+				}
+
+		fputs(cadena_cifrada, salida);
+		fclose(salida);
+		free(cadena_cifrada);
+	}
 }
