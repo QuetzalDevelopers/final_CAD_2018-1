@@ -178,11 +178,7 @@ void convierte_codigo(int *codigo_cifrado, int tamano_codigo){
 		cadena_cifrada = (char *) malloc(tamano_codigo * sizeof(char));
 
 		for(i = 0; i < tamano_codigo; i++)
-			for(j = 0; j < TAMANO_ALFABETO; j++)
-				if(codigo_cifrado[i] == ALFABETO[j]){
-					cadena_cifrada[i] = ALFABETO[j];
-					break;
-				}
+			cadena_cifrada[i] = ALFABETO[codigo_cifrado[i]];
 
 		fputs(cadena_cifrada, salida);
 		fclose(salida);
