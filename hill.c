@@ -108,6 +108,14 @@ void convierte_cadena(int tamano_palabra, int n){
 				break;
 			}
 	}
+
+	printf("Palabra codificada:");
+	for(i = 0; i < tamano_palabra; ++i){
+		if(i % n == 0)
+			printf("\t");
+		printf("%3d", palabra_codificada[i]);
+	}
+	printf("\n");
 }
 
 /* Entradas: m es la matriz, n es el tamaño de la matriz y w es la palabra codificada
