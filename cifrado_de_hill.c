@@ -10,6 +10,7 @@ int lecturaDeArchivoTXT(FILE * fichero, char * cad, int n);
 //=======
 //int lecturaTeclado(int n, int *mat); 
 //int lecturaDeArchivoTXT(FILE * fichero, char * cad, int tam);
+int *crea_arreglo_enteros(int n);
 void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n);
 void multiplica_matriz(int *m, int n, int *w, int w_size, int *r);
 void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
@@ -29,10 +30,10 @@ int main(int argc, char const *argv[])
 //=======
 	//lecturaTeclado(n,mat);	
 	//lecturaDeArchivoTXT(fichero, cad, tam);
+	cad_cod = crea_arreglo_enteros(tam);
+	cad_cod_cif = crea_arreglo_enteros(tam);
 	convierte_cadena(cad, tam, cad_cod, n);
-	printf("Voy a multiplicar la matriz\n");
 	multiplica_matriz(mat, n, cad_cod, tam, cad_cod_cif);
-	printf("Voy a recodificar\n");
 	convierte_codigo(cad_cod_cif, tam);
 //>>>>>>> 8eb471138fe7297e1b3c5e033a409cbe4dc2980b
 	free(cad);
@@ -102,19 +103,23 @@ int lecturaDeArchivoTXT(FILE * fichero, char * cad, int n){
 	return contador;
 }
 
-void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n){
-	int i, j;
+int *crea_arreglo_enteros(int n){
+	return (int *) malloc(n * sizeof(int));
+}
 
-	palabra_codificada = (int *) malloc(tamano_palabra * sizeof(int));
+void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n){
+	int i, j, ban+;
 
 	for(i = 0; i < tamano_palabra; i++){
-		if(palabra[i] == 'Ñ')
-			palabra[i] = 'N';
+		bandera = 0;
 		for(j = 0; j < TAMANO_ALFABETO; j++)
 			if(palabra[i] == ALFABETO[j]){
 				palabra_codificada[i] = j;
+				bandera = 1;
 				break;
 			}
+		if(bandera == 0)
+			cad[i] = 50;
 	}
 }
 
@@ -128,8 +133,6 @@ void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 	int i, j, k;
 	int start, end, count;
 
-	r = (int *) malloc(w_size * sizeof(int));
-
 	//copiando lo que tiene la memoria dinámica en una matriz estática para evitar problemas al usar mpi
 	k = 0;
 	for(i = 0; i < n; i++)
@@ -142,9 +145,9 @@ void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 	for(i = 0; i < w_size / n; i++){
 		start = i * n;
 		end = start + n;
-		count = 0;
 
 		//Copiando los grupos de n en el arreglo auxiliar
+		count = 0;
 		for(j = start; j < end; j++){
 			w_aux[count] = w[j];
 			count++;
@@ -160,8 +163,11 @@ void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 				r_aux[j] += m_aux[j][k] * w_aux[k];
 
 		//se agrega al arreglo del resultado la parte de la palabra cifrada
-		for(j = start; j < end; j++)
-			r[j] = r_aux[j] % TAMANO_ALFABETO;
+		count = 0;
+		for(j = start; j < end; j++){
+			r[j] = r_aux[count] % TAMANO_ALFABETO;
+			count++;
+		}
 	}
 }
 
@@ -175,10 +181,11 @@ void convierte_codigo(int *codigo_cifrado, int tamano_codigo){
 	if(salida == NULL){
 		printf("Error al abrir el archivo de salida\n");
 	}else{
-		cadena_cifrada = (char *) malloc(tamano_codigo * sizeof(char));
+		cadena_cifrada = (char *) malloc(tamano_codigo + 1 * sizeof(char));
 
 		for(i = 0; i < tamano_codigo; i++)
 			cadena_cifrada[i] = ALFABETO[codigo_cifrado[i]];
+		cadena_cifrada[tamano_codigo] = '\0';
 
 		fputs(cadena_cifrada, salida);
 		fclose(salida);

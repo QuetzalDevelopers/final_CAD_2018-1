@@ -95,24 +95,26 @@ int lecturaDeArchivoTXT(FILE * fichero, int n){
 }
 
 void convierte_cadena(int tamano_palabra, int n){
-	int i, j;
+	int i, j, bandera;
 
 	palabra_codificada = (int *) malloc(tamano_palabra * sizeof(int));
 
 	for(i = 0; i < tamano_palabra; i++){
-		if(cad[i] == 'Ñ')
-			cad[i] = 'N';
+		bandera = 0;
 		for(j = 0; j < TAMANO_ALFABETO; j++)
 			if(cad[i] == ALFABETO[j]){
 				palabra_codificada[i] = j;
+				bandera = 1;
 				break;
 			}
+		if(bandera == 0)
+			cad[i] = 50;
 	}
 
 	printf("Palabra codificada:");
 	for(i = 0; i < tamano_palabra; ++i){
-		if(i % n == 0)
-			printf("\t");
+		if(i % n == 0 && i != 0)
+			printf(";");
 		printf("%3d", palabra_codificada[i]);
 	}
 	printf("\n");
@@ -142,9 +144,9 @@ void multiplica_matriz(int n, int w_size){
 	for(i = 0; i < w_size / n; i++){
 		start = i * n;
 		end = start + n;
-		count = 0;
 
 		//Copiando los grupos de n en el arreglo auxiliar
+		count = 0;
 		for(j = start; j < end; j++){
 			w_aux[count] = palabra_codificada[j];
 			count++;
@@ -160,10 +162,21 @@ void multiplica_matriz(int n, int w_size){
 				r_aux[j] += m_aux[j][k] * w_aux[k];
 
 		//se agrega al arreglo del resultado la parte de la palabra cifrada
-		for(j = start; j < end; j++)
-			codigo_cifrado[j] = abs(r_aux[j] % 53);
-			printf("%3d", codigo_cifrado[j]);
+		count = 0;
+		for(j = start; j < end; j++){
+			codigo_cifrado[j] = r_aux[count] % TAMANO_ALFABETO;
+			count++;
+		}
+		
 	}
+
+	printf("Palabra codificada cifrada:");
+	for(i = 0; i < w_size; i++){
+		if(i % n == 0 && i != 0)
+			printf(";");
+		printf("%3d", codigo_cifrado[i]);
+	}
+	printf("\n");
 }
 
 void convierte_codigo(int tamano_codigo){
@@ -176,11 +189,13 @@ void convierte_codigo(int tamano_codigo){
 	if(salida == NULL){
 		printf("Error al abrir el archivo de salida\n");
 	}else{
-		cadena_cifrada = (char *) malloc(tamano_codigo * sizeof(char));
+		cadena_cifrada = (char *) malloc(tamano_codigo + 1 * sizeof(char));
 
 		for(i = 0; i < tamano_codigo; i++)
 			cadena_cifrada[i] = ALFABETO[codigo_cifrado[i]];
+		cadena_cifrada[tamano_codigo] = '\0';
 
+		printf("Cadena cifrada: %s\n", cadena_cifrada);
 		fputs(cadena_cifrada, salida);
 		fclose(salida);
 		free(cadena_cifrada);
