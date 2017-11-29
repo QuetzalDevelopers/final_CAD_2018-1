@@ -7,8 +7,8 @@
 int *crea_arreglo_enteros(int n);
 char *crea_cadena(int n);
 void lecturaTeclado(int n, int *mat); 
-int obten_longitud_cadena( );
-int lecturaDeArchivoTXT(char * cad, int n, int contador);
+int obten_longitud_cadena(int n);
+void lecturaDeArchivoTXT(char * cad, int n, int contador);
 void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n);
 void multiplica_matriz(int *m, int n, int *w, int w_size, int *r);
 void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
@@ -26,9 +26,9 @@ int main(int argc, char const *argv[])
 	mat = crea_arreglo_enteros(n*n);
 	printf("Ingrese la matriz de %d*%d\n",n,n);
 	lecturaTeclado(n,mat);
-	tam = obten_longitud_cadena( );
+	tam = obten_longitud_cadena(n);
 	cad = crea_cadena(tam); 
-	tam = lecturaDeArchivoTXT(cad, n, tam);
+	lecturaDeArchivoTXT(cad, n, tam);
 	cad_cod = crea_arreglo_enteros(tam);
 	cad_cod_cif = crea_arreglo_enteros(tam);
 	convierte_cadena(cad, tam, cad_cod, n);
@@ -63,9 +63,9 @@ void lecturaTeclado(int n, int *mat){
 	}
 }
 
-int obten_longitud_cadena( ){
+int obten_longitud_cadena(int n){
 	FILE *archivo;
-	int contador;
+	int contador, modulo;
 
 	archivo = fopen("ejemplo.txt", "r");
 	if(archivo == NULL){
@@ -76,33 +76,41 @@ int obten_longitud_cadena( ){
 	contador = 0;
 	while(getc(archivo) != EOF)
 		contador++;
+	contador=contador-1;
+	modulo = contador%n;//revisar si se pueden agrupar en grupos de n
+   	printf("modulo=> %d mod %d = %d\n",contador,n, modulo);
+   	if(modulo>0){
+    		contador=contador+(n-modulo); 
+    	}
 	fclose(archivo);
 
 	//Regresa el tamaño menos el carcater de fin de archivo
-	return contador - 1;
+	return contador;
 }
 
-int lecturaDeArchivoTXT(char *cad, int n, int contador){
-	int letra, i,j,inicio,fin,modulo;
+void lecturaDeArchivoTXT(char *cad, int n, int contador){
+	int letra, i,j,inicio,fin;
 	FILE *fichero;
 
-    modulo= contador%n;//revisar si se pueden agrupar en grupos de n
-   	printf("modulo=> %d mod %d = %d\n",contador,n, modulo);
-   	if(modulo>0){
-    	contador=contador+(n-modulo); 
-    }
-    
     fichero = fopen("ejemplo.txt","r");
-    for(i=0; i<contador; i++){
+    /*for(i=0; i<contador; i++){
     	cad[i]=getc(fichero);
 		/*if(cad[i] == 'Ñ')
 			cad[i] = 'N';
 		else if (cad[i] == 'ñ')
-			cad[i] == 'n';*/
-    	if(modulo>0)
-    		if(i>(contador-n))
-    			cad[i]='x';
+			cad[i] == 'n';
+		if()
+			cad[i]='x';
+    }*/
+
+    i = 0;
+    while((letra = getc(fichero)) != EOF){
+    	cad[i] = letra;
+    	i++;
     }
+    if(i < contador)
+    	for(j = i - 1; j < contador; j++)
+    		cad[j] = 'x';
 	fclose(fichero);
 	inicio=0;
 	fin=n;
@@ -117,8 +125,6 @@ int lecturaDeArchivoTXT(char *cad, int n, int contador){
 		inicio=inicio+n;
 		fin=inicio+n; 
 	}
-
-	return contador;
 }
 
 
