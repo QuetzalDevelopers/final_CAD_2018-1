@@ -12,21 +12,22 @@ void lecturaTeclado(int n, int *mat);
 int obten_longitud_cadena(int n);
 int obten_grupos_por_proceso(int *grupos_por_proceso, int tamano_cadena, int grupo, int numero_procesos);
 void lecturaDeArchivoTXT(char * cad, int n, int contador);
-void calcula_limites(int &inicio, int &fin, int id, int tamano_parte);
 void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n);
 void multiplica_matriz(int *m, int n, int *w, int w_size, int *r);
-void concatena_arreglo(int *fuente, int *extension, int inicio, int fin)
+void copia_parte_cadena(char *fuente, char *destino, int inicio, int fin);
+void concatena_arreglo(int *fuente, int *extension, int inicio, int fin);
 void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char *argv[ ]){
 	char *cad, *parte_cad;
-	int tam,*mat,n,gpp,ext,tam_parte;
+	int *mat, n;
+	//Para las pruebas se utilizará una matriz y una n estáticas
+	//int mat[9] = {1, 2, 3, 0, 4, 5, 1, 0, 6};
+	//int n = 3;
+	int tam, gpp, ext, tam_parte;
 	int *cad_cod, *parte_cad_cod;
 	int *cad_cod_cif, *parte_cad_cod_cif;
 	int id, nproc;
-	int ini, fin;
-	FILE* fichero;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &id);
@@ -43,14 +44,16 @@ int main(int argc, char const *argv[])
 	//Asignacion de espacio para la matriz (todos los procesos)
 	mat = crea_arreglo_enteros(n * n);
 
-	if(id==0){
+	//leyendo los datos de la matriz
+	if(id == 0){
 		printf("Ingrese la matriz de %d*%d\n", n, n);
-		lecturaTeclado(n,mat);
+		lecturaTeclado(n, mat);
 		tam = obten_longitud_cadena(n);
+		//printf("Proceso %d: tamano_cadena = %d\n", id, tam);
 		ext = obten_grupos_por_proceso(&gpp, tam, n, nproc);
+		//printf("Proceso %d: excedentes = %d\n", id, ext);
 		cad = crea_cadena(tam); 
 		lecturaDeArchivoTXT(cad, n, tam);
-		//cad_cod = crea_arreglo_enteros(tam);
 		cad_cod_cif = crea_arreglo_enteros(tam);
 	}
 
@@ -58,7 +61,9 @@ int main(int argc, char const *argv[])
 	MPI_Bcast(mat, n * n, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&gpp, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+	//Calculando el tamaño de la parte que le tocara a cada proceso
 	tam_parte = gpp * n;
+	printf("Proceso %d: tamano_parte = %d\n", id, tam_parte);
 
 	//Asignando espacio para cada parte
 	parte_cad = crea_cadena(tam_parte);
@@ -66,44 +71,49 @@ int main(int argc, char const *argv[])
 	parte_cad_cod_cif = crea_arreglo_enteros(tam_parte);
 
 	//Dividiendo la cadena entre los procesos
-	MPI_Scatter(cad, tam_parte, MPI_CHAR, parte_cad, tam_parte, 0, MPI_COMM_WORLD);
+	MPI_Scatter(cad, tam_parte, MPI_CHAR, parte_cad, tam_parte, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-	calcula_limites(&ini, &fin, id, tam_parte);
+	//Cada proceso hace su parte de la cadena
+	convierte_cadena(parte_cad, tam_parte, parte_cad_cod, n);
+	multiplica_matriz(mat, n, parte_cad_cod, tam_parte, parte_cad_cod_cif);
 
-	//Pasar parte_cad en vez de cad y agregar los limites para que solo trabaje con su respectiva parte
-	convierte_cadena(cad, tam, cad_cod, n);
-	//pasar parte_cad_cod en vez de cad_cod y agregar los limites para que solo trabaje con su respectiva parte 
-	multiplica_matriz(mat, n, cad_cod, tam, cad_cod_cif);
-
-	//aqui se debe de hacer un gather para cad_cod_cif para reunir la informacion
+	//Juntando la cadena codificada cifrada a la raiz
+	MPI_Gather(parte_cad_cod_cif, tam_parte, MPI_INT, cad_cod_cif, tam_parte, MPI_INT, 0, MPI_COMM_WORLD);
 
 	//convierte_codigo debe ser atendida solo por 0 debido a que escribe en archivo
 	if(id == 0){
 		//Procesando grupos excedentes
-		if(ext != 0){
-			int *cad_aux;
+		if(ext > 0){
+			char *cad_aux;
+			int *cad_cod_aux;
+			int *cad_cod_cif_aux;
+			int ini, fin;
 
 			cad_aux = crea_cadena(ext * n);
 			cad_cod_aux = crea_arreglo_enteros(ext * n);
 			cad_cod_cif_aux = crea_arreglo_enteros(ext * n);
 			ini = tam - (ext * n);
 			fin = tam;
-			convierte_cadena(cad_aux, ext * n, cad_cod_aux, n, ini, fin);
+			copia_parte_cadena(cad, cad_aux, ini, fin);
+			convierte_cadena(cad_aux, ext * n, cad_cod_aux, n);
 			multiplica_matriz(mat, n, cad_cod_aux, ext * n, cad_cod_cif_aux);
 			concatena_arreglo(cad_cod_cif, cad_cod_cif_aux, ini, fin);
 		}
 		convierte_codigo(cad_cod_cif, tam);
 	}
 
+	//Liberando espacio en memoria
 	if(id == 0){
 		free(cad);
-		free(cad_cod);
 		free(cad_cod_cif);
 	}
 	free(mat);
 	free(parte_cad);
 	free(parte_cad_cod);
 	free(parte_cad_cod_cif);
+
+	//Finalizando la región paralela
+	MPI_Finalize( );
 
 	return 0;
 
@@ -193,12 +203,6 @@ void lecturaDeArchivoTXT(char *cad, int n, int contador){
 	}
 }
 
-void calcula_limites(int &inicio, int &fin, int id, int tamano_parte){
-	*inicio = id * tamano_parte;
-	*fin = *inicio + tamano_parte;
-}
-
-
 void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n){
 	int i, j, bandera;
 
@@ -217,13 +221,13 @@ void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada
 			palabra_codificada[i] = 50;
 	}
 
-	printf("Palabra codificada:\n");
-	for(i = 0; i < tamano_palabra; ++i){
+	/*printf("Palabra codificada:\n");
+	for(i = 0; i < tamano_palabra; i++){
 		if(i % n == 0 && i != 0)
 			printf("\n");
 		printf("%3d", palabra_codificada[i]);
 	}
-	printf("\n");
+	printf("\n");*/
 }
 
 /* Entradas: m es la matriz, n es el tamaño de la matriz y w es la palabra codificada
@@ -273,13 +277,23 @@ void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 		}
 	}
 
-	printf("Palabra codificada cifrada:\n");
+	/*printf("Palabra codificada cifrada:\n");
 	for(i = 0; i < w_size; i++){
 		if(i % n == 0 && i != 0)
 			printf("\n");
 		printf("%3d", r[i]);
 	}
-	printf("\n");
+	printf("\n");*/
+}
+
+void copia_parte_cadena(char *fuente, char *destino, int inicio, int fin){
+	int i, j;
+
+	j = 0;
+	for(i = inicio; i < fin; i++){
+		destino[j] = fuente[i];
+		j++;
+	}
 }
 
 void concatena_arreglo(int *fuente, int *extension, int inicio, int fin){
@@ -297,7 +311,7 @@ void convierte_codigo(int *codigo_cifrado, int tamano_codigo){
 	char *cadena_cifrada;
 	FILE *salida;
 
-	salida = fopen("cadena_cifrada.txt", "w");
+	salida = fopen("cadena_cifrada_mpi.txt", "w");
 
 	if(salida == NULL){
 		printf("Error al abrir el archivo de salida\n");
