@@ -28,6 +28,7 @@ int main(int argc, char *argv[ ]){
 	int *cad_cod, *parte_cad_cod;
 	int *cad_cod_cif, *parte_cad_cod_cif;
 	int id, nproc;
+	double t0, t1;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &id);
@@ -55,6 +56,7 @@ int main(int argc, char *argv[ ]){
 		cad = crea_cadena(tam); 
 		lecturaDeArchivoTXT(cad, n, tam);
 		cad_cod_cif = crea_arreglo_enteros(tam);
+		t0 = MPI_Wtime( );
 	}
 
 	//Distribuyendo los datos necesarios a los procesos
@@ -100,6 +102,8 @@ int main(int argc, char *argv[ ]){
 			concatena_arreglo(cad_cod_cif, cad_cod_cif_aux, ini, fin);
 		}
 		convierte_codigo(cad_cod_cif, tam);
+		t1 = MPI_Wtime( );
+		printf("Tiempo de ejecucion = %1.3f ms\n", (t1 - t0) * 1000);
 	}
 
 	//Liberando espacio en memoria

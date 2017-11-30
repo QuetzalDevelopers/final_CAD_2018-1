@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
+
 #define ALFABETO "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
 #define TAMANO_ALFABETO 53
 
@@ -13,13 +15,12 @@ void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada
 void multiplica_matriz(int *m, int n, int *w, int w_size, int *r);
 void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char *argv[ ]){
+	struct timeval t0, t1;
 	char *cad;
 	int tam,*mat,n;
 	int *cad_cod, n_cad_cod;
-	int *cad_cod_cif;
-	FILE* fichero; 
+	int *cad_cod_cif; 
 
 	printf("Ingrese el valor de n\n");
 	scanf("%d",&n);
@@ -31,9 +32,12 @@ int main(int argc, char const *argv[])
 	lecturaDeArchivoTXT(cad, n, tam);
 	cad_cod = crea_arreglo_enteros(tam);
 	cad_cod_cif = crea_arreglo_enteros(tam);
+	gettimeofday(&t0, 0);
 	convierte_cadena(cad, tam, cad_cod, n);
 	multiplica_matriz(mat, n, cad_cod, tam, cad_cod_cif);
 	convierte_codigo(cad_cod_cif, tam);
+	gettimeofday(&t1, 0);
+	printf("Tiempo de ejecucion: %1.3f ms\n", (double) (t1.tv_usec - t0.tv_usec) / 1000);
 
 	free(cad);
 	free(mat);
