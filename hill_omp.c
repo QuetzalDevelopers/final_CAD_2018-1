@@ -1,3 +1,10 @@
+/* Integrantes:
+
+													Delgado González Delta Sofía
+													Hernández Mayo Andrés Alberto
+													Novas Santamaría José Manuel
+
+*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
