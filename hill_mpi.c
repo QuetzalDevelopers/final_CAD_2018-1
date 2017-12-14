@@ -21,9 +21,6 @@ void convierte_codigo(int *codigo_cifrado, int tamano_codigo);
 int main(int argc, char *argv[ ]){
 	char *cad, *parte_cad;
 	int *mat, n;
-	//Para las pruebas se utilizará una matriz y una n estáticas
-	//int mat[9] = {1, 2, 3, 0, 4, 5, 1, 0, 6};
-	//int n = 3;
 	int tam, gpp, ext, tam_parte;
 	int *cad_cod, *parte_cad_cod;
 	int *cad_cod_cif, *parte_cad_cod_cif;
@@ -65,7 +62,7 @@ int main(int argc, char *argv[ ]){
 
 	//Calculando el tamaño de la parte que le tocara a cada proceso
 	tam_parte = gpp * n;
-	printf("Proceso %d: tamano_parte = %d\n", id, tam_parte);
+	//printf("Proceso %d: tamano_parte = %d\n", id, tam_parte);
 
 	//Asignando espacio para cada parte
 	parte_cad = crea_cadena(tam_parte);
@@ -96,10 +93,15 @@ int main(int argc, char *argv[ ]){
 			cad_cod_cif_aux = crea_arreglo_enteros(ext * n);
 			ini = tam - (ext * n);
 			fin = tam;
+
 			copia_parte_cadena(cad, cad_aux, ini, fin);
 			convierte_cadena(cad_aux, ext * n, cad_cod_aux, n);
 			multiplica_matriz(mat, n, cad_cod_aux, ext * n, cad_cod_cif_aux);
 			concatena_arreglo(cad_cod_cif, cad_cod_cif_aux, ini, fin);
+
+			free(cad_aux);
+			free(cad_cod_aux);
+			free(cad_cod_cif_aux);
 		}
 		convierte_codigo(cad_cod_cif, tam);
 		t1 = MPI_Wtime( );
@@ -146,7 +148,7 @@ int obten_longitud_cadena(int n){
 	FILE *archivo;
 	int contador, modulo;
 
-	archivo = fopen("ejemplo.txt", "r");
+	archivo = fopen("cadena.txt", "r");
 	if(archivo == NULL){
 		printf("No se encuentra el archivo de entrada\n");
 		return 0;
@@ -181,7 +183,7 @@ void lecturaDeArchivoTXT(char *cad, int n, int contador){
 	int letra, i,j,inicio,fin;
 	FILE *fichero;
 
-    fichero = fopen("ejemplo.txt","r");
+    fichero = fopen("cadena.txt","r");
 
     i = 0;
     while((letra = getc(fichero)) != EOF){
@@ -196,15 +198,7 @@ void lecturaDeArchivoTXT(char *cad, int n, int contador){
 	fin=n;
 	printf("\n");
     
-    //para imprimir en periodos de n 
-	for(i=0; i<(contador/n); i++){
-		for (j =inicio; j < fin; ++j){
-			printf("%c",cad[j]);	
-		}
-		printf("\n");
-		inicio=inicio+n;
-		fin=inicio+n; 
-	}
+    printf("Cadena a cifrar: %s\n", cad);
 }
 
 void convierte_cadena(char *palabra, int tamano_palabra, int *palabra_codificada, int n){
@@ -280,14 +274,6 @@ void multiplica_matriz(int *m, int n, int *w, int w_size, int *r){
 			count++;
 		}
 	}
-
-	/*printf("Palabra codificada cifrada:\n");
-	for(i = 0; i < w_size; i++){
-		if(i % n == 0 && i != 0)
-			printf("\n");
-		printf("%3d", r[i]);
-	}
-	printf("\n");*/
 }
 
 void copia_parte_cadena(char *fuente, char *destino, int inicio, int fin){
@@ -320,7 +306,7 @@ void convierte_codigo(int *codigo_cifrado, int tamano_codigo){
 	if(salida == NULL){
 		printf("Error al abrir el archivo de salida\n");
 	}else{
-		cadena_cifrada = (char *) malloc(tamano_codigo + 1 * sizeof(char));
+		cadena_cifrada = crea_cadena(tamano_codigo + 1);
 		//Proceso inverso de busqueda en el alfabeto
 		for(i = 0; i < tamano_codigo; i++)
 			cadena_cifrada[i] = ALFABETO[codigo_cifrado[i]];
